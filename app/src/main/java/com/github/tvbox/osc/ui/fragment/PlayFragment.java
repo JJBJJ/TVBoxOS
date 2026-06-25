@@ -279,6 +279,12 @@ public class PlayFragment extends BaseLazyFragment {
             }
 
             @Override
+            public void searchDanmuUi(boolean longClick) {
+                VodInfo.VodSeries series = mVodInfo == null ? null : getCurrentSeries(mVodInfo.playFlag, mVodInfo.playIndex);
+                ApiConfig.get().searchDanmuUi(mVodInfo == null ? "" : mVodInfo.name, series == null ? "" : series.name, longClick);
+            }
+
+            @Override
             public void playNext(boolean rmProgress) {
                 String preProgressKey = progressKey;
                 PlayFragment.this.playNext(rmProgress);

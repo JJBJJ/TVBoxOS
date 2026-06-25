@@ -34,6 +34,8 @@ import okhttp3.Response;
 public class JarLoader {
     private final ConcurrentHashMap<String, DexClassLoader> classLoaders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Method> proxyMethods = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Method> danmuClickMethods = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Method> danmuLongClickMethods = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Spider> spiders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> siteJarKeys = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> protectedInitJars = new ConcurrentHashMap<>();
@@ -69,6 +71,8 @@ public class JarLoader {
     public void clear() {
         spiders.clear();
         proxyMethods.clear();
+        danmuClickMethods.clear();
+        danmuLongClickMethods.clear();
         classLoaders.clear();
         siteJarKeys.clear();
     }
@@ -123,6 +127,20 @@ public class JarLoader {
                         } catch (Throwable th) {
                             // 可以记录错误日志
                             th.printStackTrace();
+                        }
+                        try {
+                            Class<?> danmaku = classLoader.loadClass("com.github.catvod.spider.Danmaku");
+                            try {
+                                Method clickMethod = danmaku.getMethod("onClick", String.class, String.class);
+                                danmuClickMethods.put(key, clickMethod);
+                            } catch (Throwable ignored) {
+                            }
+                            try {
+                                Method longClickMethod = danmaku.getMethod("onLongClick", String.class, String.class);
+                                danmuLongClickMethods.put(key, longClickMethod);
+                            } catch (Throwable ignored) {
+                            }
+                        } catch (Throwable ignored) {
                         }
                         break;
                     }
@@ -427,6 +445,19 @@ public class JarLoader {
             th.printStackTrace();
         }
         return new SpiderNull();
+    }
+
+    public void searchDanmuUi(String name, String episode, boolean longClick) {
+        try {
+            ConcurrentHashMap<String, Method> methods = longClick ? danmuLongClickMethods : danmuClickMethods;
+            Method method = methods.get(recentJarKey);
+            if (method == null) method = methods.get("main");
+            if (method == null) return;
+            method.invoke(null, name, episode);
+        } catch (Throwable th) {
+            Log.i("JarLoader", "echo-searchDanmuUi error key=" + name + ", episode=" + episode + ", longClick=" + longClick + ", msg=" + th.getMessage());
+            th.printStackTrace();
+        }
     }
 
     private String getJarKey(String jar) {

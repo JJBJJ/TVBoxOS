@@ -96,6 +96,7 @@ public class ApiConfig {
     private final Gson gson;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService jarLoadExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService danmuSearchExecutor = Executors.newSingleThreadExecutor();
 
     private final String userAgent = "okhttp/3.15";
 
@@ -1425,6 +1426,17 @@ public class ApiConfig {
 
     public Spider getLiveCSP(String url) {
         return url.contains(".js") ? getJsCSP(url) : getPyCSP(url);
+    }
+
+    public void searchDanmuUi(String name, String episode, boolean longClick) {
+        danmuSearchExecutor.execute(() -> {
+            try {
+                jarLoader.searchDanmuUi(name, episode, longClick);
+            } catch (Throwable th) {
+                LOG.e("ApiConfig searchDanmuUi error: " + th.getMessage());
+                th.printStackTrace();
+            }
+        });
     }
 
     public int getLiveConnectTimeoutSeconds() {
